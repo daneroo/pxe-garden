@@ -1,11 +1,12 @@
 {
   "ignition": {
-    "version": "3.3.0"
+    "version": "3.4.0"
   },
   "passwd": {
     "users": [
       {
         "name": "core",
+        "passwordHash": "$6$vv7OtD1I6imEEymo$wTzlExDeX2atlIz3eeQEHgE.NRTVOVhC5Uoh76FkU./HVmrQBUCawR7CCqPP.zV.zUk52rwaiiE0TURyt9YhA/",
         "sshAuthorizedKeys": [
           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBrUdJY3Aj0Xi2zdlGrEHFv3FNnlMz6ASLclhhl9cj1p"
         ]
