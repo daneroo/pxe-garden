@@ -8,3 +8,11 @@ passwd:
       ssh_authorized_keys:
         # daniel@galois
         - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBrUdJY3Aj0Xi2zdlGrEHFv3FNnlMz6ASLclhhl9cj1p
+storage:
+  files:
+    # Does not seem to work, because 40-disable-passwords.conf says "PasswordAuthentication no"
+    - path: /etc/ssh/sshd_config.d/90-enable-password-auth.conf
+      mode: 0600
+      contents:
+        inline: |
+          PasswordAuthentication yes

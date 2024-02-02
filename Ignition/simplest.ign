@@ -12,5 +12,17 @@
         ]
       }
     ]
+  },
+  "storage": {
+    "files": [
+      {
+        "path": "/etc/ssh/sshd_config.d/90-enable-password-auth.conf",
+        "contents": {
+          "compression": "",
+          "source": "data:,PasswordAuthentication%20yes%0A"
+        },
+        "mode": 384
+      }
+    ]
   }
 }

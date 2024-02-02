@@ -12,6 +12,13 @@ I will use a PXE/DHCP Server to provision the nodes on their own VLAN and inject
   - Ubuntu Server with AutoInstall
   - NixOS with something (NixOps)
 
+## TODO
+
+- [ ] Do Ubuntu Server with AutoInstall
+- [ ] tailscale on FCOS - not automated yet, because it requires a manual step
+  - [ ] remove PasswordAuthentication=yes (and passwordhash) once tailscale working
+- [ ] NixOS with NixOps
+
 ## Testbed in Proxmox (eventually VLAN)
 
 ### Create `vmbr1` bridge
@@ -227,9 +234,9 @@ wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240
 wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-live-initramfs.x86_64.img
 wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-live-rootfs.x86_64.img
 
-# Raw (Maybe later)
+# Metal Install Image and sig
 wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz
-wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-metal4k.x86_64.raw.xz
+wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz
 ```
 
 ### Configure Matchbox for PXE Booting
@@ -257,7 +264,7 @@ Create a profile for Fedora CoreOS: `/var/lib/matchbox/profiles/fedora-coreos.js
       "coreos.inst.ignition_url=http://192.168.100.1:8080/assets/simplest.ign",
       "coreos.inst=yes",
       "coreos.inst.install_dev=/dev/sda",
-      "coreos.inst.image_url=https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz"
+      "coreos.inst.image_url=http://192.168.100.1:8080/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz"
     ]
   }
 }
@@ -315,6 +322,20 @@ Now copy the `simplest.ign` file to `/var/lib/matchbox/assets/simplest.ign`:
 journalctl -u matchbox.service -f
 # watch dnsmasq logs
 journalctl -u dnsmasq.service -f
+```
+
+### Tailscale
+
+See <https://techoverflow.net/2022/04/16/how-to-install-tailscale-on-fedora-coreos/>
+
+```bash
+sudo curl -o /etc/yum.repos.d/tailscale.repo https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+sudo rpm-ostree install tailscale
+# reboot
+sudo systemctl reboot
+# after reboot
+sudo systemctl enable --now tailscaled
+sudo tailscale up # --authkey tskey-xxxx
 ```
 
 ## Ubuntu Server / AutiInstall
