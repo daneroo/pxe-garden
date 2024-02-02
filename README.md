@@ -14,7 +14,7 @@ I will use a PXE/DHCP Server to provision the nodes on their own VLAN and inject
 
 ## Testbed in Proxmox (eventually VLAN)
 
-### Creatwe vmbr1 bridege
+### Create `vmbr1` bridge
 
 Since all these VMs will be on the same server, I will just create a separate bridge
 
@@ -27,7 +27,7 @@ Click "Create" and select "Linux Bridge".
 - Leave the "Bridge ports" field empty since this bridge will be used for isolated internal networking.
 - leave it without an IP.
 
-### Router vm
+## PXE-Router VM
 
 Name: pxe-router
 ISO ubuntu-22.04.1-live-server.iso
@@ -39,4 +39,280 @@ network: vmbr0, then add vmbr1 after creation
 - Install ubuntu server.
 - Shut down and add the vmbr1 to the VM, reboot
 
-## Matchbox Server
+sudo emacs 00-installer-config.yaml
+
+### Configure networking
+
+```txt
+# This is the network config written by 'subiquity'
+network:
+  ethernets:
+    ens18:
+      dhcp4: true
+    ens19:
+      dhcp4: false
+      addresses: [192.168.100.1/24]  # This is an example. Adjust the IP address as needed.
+  version: 2
+```
+
+```bash
+sudo netplan apply
+ip addr show ens19
+```
+
+Enable IP Forwarding
+
+```bash
+echo "net.ipv4.ip_forward=1" | sudo tee /etc/sysctl.d/99-ipforward.conf
+sudo sysctl -p /etc/sysctl.d/99-ipforward.conf
+```
+
+NAT with iptables
+
+```bash
+# Apply NAT rule
+sudo iptables -t nat -A POSTROUTING -o ens18 -j MASQUERADE
+
+# Install iptables-persistent to save the rule across reboots
+sudo apt-get install iptables-persistent
+```
+
+confirm All is OK:
+
+```bash
+daniel@pxe-router:~$ cat /proc/sys/net/ipv4/ip_forward
+1
+daniel@pxe-router:~$ sudo iptables -t nat -L POSTROUTING -v
+Chain POSTROUTING (policy ACCEPT 1 packets, 71 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    4   294 MASQUERADE  all  --  any    ens18   anywhere             anywhere
+daniel@pxe-router:~$ ping -c 4 google.com
+PING google.com (142.251.41.46) 56(84) bytes of data.
+64 bytes from yyz12s08-in-f14.1e100.net (142.251.41.46): icmp_seq=1 ttl=114 time=11.2 ms
+
+--- google.com ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3006ms
+rtt min/avg/max/mdev = 9.622/10.023/11.180/0.668 ms
+
+```
+
+### Matchbox (Install)
+
+We will install matchbox on the pxe-router VM.
+
+Install:
+
+```bash
+wget https://github.com/poseidon/matchbox/releases/download/v0.10.0/matchbox-v0.10.0-linux-amd64.tar.gz
+tar -xvf matchbox-v0.10.0-linux-amd64.tar.gz
+sudo mv matchbox-v0.10.0-linux-amd64/matchbox /usr/local/bin/
+
+# check
+$ which matchbox
+/usr/local/bin/matchbox
+$ matchbox --version
+v0.10.0
+```
+
+Create the matchbox directories:
+
+```bash
+sudo mkdir -p /etc/matchbox /var/lib/matchbox/assets
+# /etc/matchbox is actually just for certs
+```
+
+Confirm the network for DHCP is `ens19`:
+
+```bash
+$ ip addr show ens19
+# should be the one with the 192.168.100.1 address (as above)
+```
+
+Configure Matchbox:
+
+```bash
+sudo emacs /etc/systemd/system/matchbox.service
+```
+
+```txt
+[Unit]
+Description=Matchbox
+
+[Service]
+# we configure with ENV vars instead of exec args
+# IP address and port Matchbox listens on
+Environment="MATCHBOX_ADDRESS=192.168.100.1:8080"
+# MATCHBOX_RPC_ADDRESS (gRPC API disabled by default - we won;t use it)
+# log: debug or info
+Environment="MATCHBOX_LOG_LEVEL=info"
+
+ExecStart=/usr/local/bin/matchbox
+User=root
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart matchbox.service
+
+sudo systemctl status matchbox.service
+# logs
+sudo journalctl -u matchbox.service
+sudo journalctl -u matchbox.service -f
+```
+
+### DHCP/DNS Setup: `dnsmasq`
+
+Use `dnsmasq` to provide DHCP and DNS services to the PXE clients.
+This requires turning off le DNSStubListener in systemd-resolved.
+
+```bash
+sudo apt install dnsmasq
+sudo emacs /etc/dnsmasq.conf
+```
+
+`/etc/dnsmasq.conf`:
+
+```txt
+interface=ens19
+dhcp-range=192.168.100.50,192.168.100.150,255.255.255.0,24h
+
+# Custom DNS servers (Cloudflare)
+## Use Cloudflare DNS
+server=1.1.1.1
+server=1.0.0.1
+## Use Google DNS
+# server=8.8.8.8
+# server=8.8.4.4
+
+# Optional: Increase the cache size for better performance
+cache-size=1000
+
+# PXE booting (Matchbox)
+dhcp-boot=tag:ipxe,http://192.168.100.1:8080/boot.ipxe,192.168.100.1
+dhcp-match=set:ipxe,175 # iPXE sends a DHCP option 175, match it
+
+# Optional: Static DNS entries
+# address=/example.local/192.168.100.10
+```
+
+Disable the system's DNS resolver in `/etc/systemd/resolved.conf`:
+
+```txt
+[Resolve]
+DNSStubListener=no
+```
+
+Now restart the services
+
+```bash
+sudo systemctl restart systemd-resolved
+sudo systemctl restart dnsmasq
+```
+
+### Get Feodra assets
+
+- Go to <https://fedoraproject.org/coreos/download?stream=stable#arches>
+- Download assets into `/var/lib/matchbox/assets/fedora-coreos/`:
+
+```bash
+# Netboot assets
+wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-live-kernel-x86_64
+wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-live-initramfs.x86_64.img
+wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-live-rootfs.x86_64.img
+
+# Raw (Maybe later)
+wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz
+wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-metal4k.x86_64.raw.xz
+```
+
+### Configure Matchbox for PXE Booting
+
+Prepare the assets directory: `/var/lib/matchbox/...`
+
+```bash
+sudo mkdir -p /var/lib/matchbox/profiles
+sudo mkdir -p /var/lib/matchbox/groups
+```
+
+Create a profile for Fedora CoreOS: `/var/lib/matchbox/profiles/fedora-coreos.json`
+
+```json
+{
+  "id": "fedora-coreos",
+  "name": "Fedora CoreOS",
+  "boot": {
+    "kernel": "/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-kernel-x86_64",
+    "initrd": [
+      "/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-initramfs.x86_64.img"
+    ],
+    "args": [
+      "coreos.live.rootfs_url=http://192.168.100.1:8080/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-rootfs.x86_64.img",
+      "coreos.inst.ignition_url=http://192.168.100.1:8080/assets/simplest.ign",
+      "coreos.inst=yes",
+      "coreos.inst.install_dev=/dev/sda",
+      "coreos.inst.image_url=https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz"
+    ]
+  }
+}
+```
+
+Create a group for Fedora CoreOS: `/var/lib/matchbox/groups/fedora-coreos.json`.
+This group has no selector.
+
+```txt
+{
+  "name": "default-group",
+  "profile": "fedora-coreos",
+  "metadata": {
+    "matchbox_server_ip": "192.168.100.1"
+  }
+}
+```
+
+## Fedora CoreOS / Ignition
+
+FCC (Fedora CoreOS Config) is now called butane.
+
+Here is the simplest possible Ignition file to get Fedora CoreOS installed:
+`simplest.yaml.bu`:
+
+```yaml
+variant: fcos
+version: 1.4.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        # daniel@galois
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBrUdJY3Aj0Xi2zdlGrEHFv3FNnlMz6ASLclhhl9cj1p
+```
+
+See butane docs: <https://docs.fedoraproject.org/en-US/fedora-coreos/producing-ign/>.
+
+To compile the butane file into an Ignition config, use the `butane` command:
+
+```bash
+# you can also use docker podman
+brew install butane
+butane --pretty --strict simplest.yaml.bu -o simplest.ign
+```
+
+Now copy the `simplest.ign` file to `/var/lib/matchbox/assets/simplest.ign`:
+
+### Test the PXE Boot
+
+```bash
+# watch matchbox logs
+journalctl -u matchbox.service -f
+# watch dnsmasq logs
+journalctl -u dnsmasq.service -f
+```
+
+## Ubuntu Server / AutiInstall
