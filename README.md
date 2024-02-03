@@ -14,6 +14,7 @@ I will use a PXE/DHCP Server to provision the nodes on their own VLAN and inject
 
 ## TODO
 
+- [ ] Convert pxe-router to docker/podman
 - [ ] Do Ubuntu Server with AutoInstall
 - [ ] tailscale on FCOS - not automated yet, because it requires a manual step
   - [ ] remove PasswordAuthentication=yes (and passwordhash) once tailscale working
@@ -261,7 +262,7 @@ Create a profile for Fedora CoreOS: `/var/lib/matchbox/profiles/fedora-coreos.js
     ],
     "args": [
       "coreos.live.rootfs_url=http://192.168.100.1:8080/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-rootfs.x86_64.img",
-      "coreos.inst.ignition_url=http://192.168.100.1:8080/assets/simplest.ign",
+      "coreos.inst.ignition_url=http://192.168.100.1:8080/assets/simplest-fcos.ign",
       "coreos.inst=yes",
       "coreos.inst.install_dev=/dev/sda",
       "coreos.inst.image_url=http://192.168.100.1:8080/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz"
@@ -288,7 +289,7 @@ This group has no selector.
 FCC (Fedora CoreOS Config) is now called butane.
 
 Here is the simplest possible Ignition file to get Fedora CoreOS installed:
-`simplest.yaml.bu`:
+`simplest-fcos.yaml.bu`:
 
 ```yaml
 variant: fcos
@@ -310,10 +311,10 @@ To compile the butane file into an Ignition config, use the `butane` command:
 ```bash
 # you can also use docker podman
 brew install butane
-butane --pretty --strict simplest.yaml.bu -o simplest.ign
+butane --pretty --strict ./Ignition/simplest-fcos.yaml.bu -o ./Ignition/simplest-fcos.ign
 ```
 
-Now copy the `simplest.ign` file to `/var/lib/matchbox/assets/simplest.ign`:
+Now copy the `simplest-fcos.ign` file to `/var/lib/matchbox/assets/simplest-fcos.ign`:
 
 ### Test the PXE Boot
 
