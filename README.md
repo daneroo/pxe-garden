@@ -10,6 +10,7 @@ I will use a PXE/DHCP Server to provision the nodes on their own VLAN and inject
 - The provisioned VM's will run:
   - Fedora CoreOS with Ignition
   - Ubuntu Server with AutoInstall
+  - Debian with Preseed
   - NixOS with something (NixOps)
 
 ## TODO
@@ -291,8 +292,14 @@ sudo tailscale up # --authkey tskey-xxxx
 
 See <https://ubuntu.com/server/docs/install/autoinstall>
 
-> The autoinstall config is provided via cloud-init configuration, which is almost endlessly flexible. In most scenarios, the easiest way will be to provide user data via the NoCloud datasource.
+NOT WORKING YET. We are able to boot the VM, but it is not getting the autoinstall config.
 
 - Create a profile and group for ubuntu
   - [profiles/ubuntu.json](./matchbox/profiles/ubuntu.json)
   - [groups/ubuntu.json](./matchbox/groups/ubuntu.json)
+
+## Debian / Preseed
+
+- Create a profile and group for ubuntu
+  - [profiles/ubuntu.json](./matchbox/profiles/debian.json)
+  - [groups/ubuntu.json](./matchbox/groups/debian.json)

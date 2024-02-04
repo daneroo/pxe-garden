@@ -1,0 +1,18 @@
+{
+  "id": "debian",
+  "name": "Debian Automated Install",
+  "boot": {
+    "kernel": "/assets/debian/bullseye-linux",
+    "initrd": ["/assets/debian/bullseye-initrd.gz"],
+    "args": [
+      "auto=true",
+      "priority=critical",
+      "url=http://192.168.100.1:8080/assets/debian-preseed.cfg",
+      "netcfg/get_hostname=debian",
+      "netcfg/get_domain=local",
+      "interface=auto",
+      "debian-installer/locale=en_US",
+      "keyboard-configuration/xkb-keymap=us"
+    ]
+  }
+}
