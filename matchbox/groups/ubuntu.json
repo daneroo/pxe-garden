@@ -1,0 +1,7 @@
+{
+  "name": "default-group",
+  "profile": "ubuntu",
+  "metadata": {
+    "matchbox_server_ip": "192.168.100.1"
+  }
+}

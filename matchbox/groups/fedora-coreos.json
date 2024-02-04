@@ -1,0 +1,10 @@
+{
+  "name": "default-group",
+  "profile": "fedora-coreos",
+  "selector": {
+    "mac": "impossible"
+  },
+  "metadata": {
+    "matchbox_server_ip": "192.168.100.1"
+  }
+}

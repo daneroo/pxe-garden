@@ -1,0 +1,12 @@
+{
+  "id": "ubuntu",
+  "name": "Ubuntu 22.04.3 Autoinstall",
+  "boot": {
+    "kernel": "/assets/ubuntu/ubuntu-22.04.3-live-server-amd64-vmlinuz",
+    "initrd": ["/assets/ubuntu/ubuntu-22.04.3-live-server-amd64-initrd"],
+    "args": [
+      "autoinstall ds=nocloud-net;s=http://192.168.100.1:8080/assets/ubuntu-22.04-autoinstall.yaml",
+      "url=http://192.168.100.1:8080/assets/ubuntu/ubuntu-22.04.3-live-server-amd64.iso"
+    ]
+  }
+}

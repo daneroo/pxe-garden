@@ -227,18 +227,8 @@ sudo systemctl restart dnsmasq
 ### Get Feodra assets
 
 - Go to <https://fedoraproject.org/coreos/download?stream=stable#arches>
-- Download assets into `/var/lib/matchbox/assets/fedora-coreos/`:
-
-```bash
-# Netboot assets
-wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-live-kernel-x86_64
-wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-live-initramfs.x86_64.img
-wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-live-rootfs.x86_64.img
-
-# Metal Install Image and sig
-wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz
-wget https://builds.coreos.fedoraproject.org/prod/streams/stable/builds/39.20240112.3.0/x86_64/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz
-```
+- Download assets into `/var/lib/matchbox/assets/fedora-coreos/`
+  - [using wget](./matchbox/assets/fedora-coreos/get-assets.sh)
 
 ### Configure Matchbox for PXE Booting
 
@@ -249,60 +239,17 @@ sudo mkdir -p /var/lib/matchbox/profiles
 sudo mkdir -p /var/lib/matchbox/groups
 ```
 
-Create a profile for Fedora CoreOS: `/var/lib/matchbox/profiles/fedora-coreos.json`
-
-```json
-{
-  "id": "fedora-coreos",
-  "name": "Fedora CoreOS",
-  "boot": {
-    "kernel": "/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-kernel-x86_64",
-    "initrd": [
-      "/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-initramfs.x86_64.img"
-    ],
-    "args": [
-      "coreos.live.rootfs_url=http://192.168.100.1:8080/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-rootfs.x86_64.img",
-      "coreos.inst.ignition_url=http://192.168.100.1:8080/assets/simplest-fcos.ign",
-      "coreos.inst=yes",
-      "coreos.inst.install_dev=/dev/sda",
-      "coreos.inst.image_url=http://192.168.100.1:8080/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz"
-    ]
-  }
-}
-```
-
-Create a group for Fedora CoreOS: `/var/lib/matchbox/groups/fedora-coreos.json`.
-This group has no selector.
-
-```txt
-{
-  "name": "default-group",
-  "profile": "fedora-coreos",
-  "metadata": {
-    "matchbox_server_ip": "192.168.100.1"
-  }
-}
-```
-
 ## Fedora CoreOS / Ignition
+
+- Create a profile and group for fedora-coreos
+  - [profiles/fedora-coreos.json](./matchbox/profiles/fedora-coreos.json)
+  - [groups/fedora-coreos.json](./matchbox/groups/fedora-coreos.json)
 
 FCC (Fedora CoreOS Config) is now called butane.
 
-Here is the simplest possible Ignition file to get Fedora CoreOS installed:
-`simplest-fcos.yaml.bu`:
+Here is the simplest possible Butane/Ignition file to get Fedora CoreOS installed:
 
-```yaml
-variant: fcos
-version: 1.5.0
-passwd:
-  users:
-    - name: core
-      # Password is generated/hashed with: openssl passwd -6
-      password_hash: "$6$vv7OtD1I6imEEymo$wTzlExDeX2atlIz3eeQEHgE.NRTVOVhC5Uoh76FkU./HVmrQBUCawR7CCqPP.zV.zUk52rwaiiE0TURyt9YhA/"
-      ssh_authorized_keys:
-        # daniel@galois
-        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBrUdJY3Aj0Xi2zdlGrEHFv3FNnlMz6ASLclhhl9cj1p
-```
+[`simplest-fcos.yaml.bu`](./matchbox/assets/simplest-fcos.yaml.bu):
 
 See butane docs: <https://docs.fedoraproject.org/en-US/fedora-coreos/producing-ign/>.
 
@@ -311,10 +258,11 @@ To compile the butane file into an Ignition config, use the `butane` command:
 ```bash
 # you can also use docker podman
 brew install butane
-butane --pretty --strict ./Ignition/simplest-fcos.yaml.bu -o ./Ignition/simplest-fcos.ign
+butane --pretty --strict ./matchbox/assets/simplest-fcos.yaml.bu -o ./matchbox/assets/simplest-fcos.ign
 ```
 
-Now copy the `simplest-fcos.ign` file to `/var/lib/matchbox/assets/simplest-fcos.ign`:
+Now copy the [`simplest-fcos.ign`](./matchbox/assets/simplest-fcos.ign) file
+to `/var/lib/matchbox/assets/simplest-fcos.ign`:
 
 ### Test the PXE Boot
 
@@ -340,3 +288,11 @@ sudo tailscale up # --authkey tskey-xxxx
 ```
 
 ## Ubuntu Server / AutiInstall
+
+See <https://ubuntu.com/server/docs/install/autoinstall>
+
+> The autoinstall config is provided via cloud-init configuration, which is almost endlessly flexible. In most scenarios, the easiest way will be to provide user data via the NoCloud datasource.
+
+- Create a profile and group for ubuntu
+  - [profiles/ubuntu.json](./matchbox/profiles/ubuntu.json)
+  - [groups/ubuntu.json](./matchbox/groups/ubuntu.json)

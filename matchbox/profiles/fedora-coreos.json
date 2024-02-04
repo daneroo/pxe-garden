@@ -1,0 +1,17 @@
+{
+  "id": "fedora-coreos",
+  "name": "Fedora CoreOS",
+  "boot": {
+    "kernel": "/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-kernel-x86_64",
+    "initrd": [
+      "/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-initramfs.x86_64.img"
+    ],
+    "args": [
+      "coreos.live.rootfs_url=http://192.168.100.1:8080/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-live-rootfs.x86_64.img",
+      "coreos.inst.ignition_url=http://192.168.100.1:8080/assets/simplest-fcos.ign",
+      "coreos.inst=yes",
+      "coreos.inst.install_dev=/dev/sda",
+      "coreos.inst.image_url=http://192.168.100.1:8080/assets/fedora-coreos/fedora-coreos-39.20240112.3.0-metal.x86_64.raw.xz"
+    ]
+  }
+}

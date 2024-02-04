@@ -1,0 +1,16 @@
+# cloud-config user-data for ubuntu AutoInstall
+autoinstall:
+  version: 1
+  identity:
+    hostname: ubuntu-server
+    username: daniel
+    # Password is generated/hashed with: openssl passwd -6
+    password: "$6$vv7OtD1I6imEEymo$wTzlExDeX2atlIz3eeQEHgE.NRTVOVhC5Uoh76FkU./HVmrQBUCawR7CCqPP.zV.zUk52rwaiiE0TURyt9YhA/"
+  storage:
+    layout:
+      name: lvm
+  user-data:
+    disable_root: false
+    package_upgrade: true
+    packages:
+      - htop
