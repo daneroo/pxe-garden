@@ -1,5 +1,5 @@
 {
-  "name": "default-group",
+  "name": "fedora-coreos-group",
   "profile": "fedora-coreos",
   "selector": {
     "mac": "impossible"

@@ -13,8 +13,15 @@ I will use a PXE/DHCP Server to provision the nodes on their own VLAN and inject
   - Debian with Preseed
   - NixOS with something (NixOps)
 
+## Syncing matchbox files
+
+```bash
+rsync -avi --progress daniel@192.168.2.33:Code/iMetrical/pxe-garden/matchbox/ /var/lib/matchbox/
+```
+
 ## TODO
 
+- [ ] pvesh script to provision (with meta tags for profile)
 - [ ] Convert pxe-router to docker/podman
 - [ ] Do Ubuntu Server with AutoInstall
 - [ ] tailscale on FCOS - not automated yet, because it requires a manual step
@@ -303,3 +310,15 @@ NOT WORKING YET. We are able to boot the VM, but it is not getting the autoinsta
 - Create a profile and group for ubuntu
   - [profiles/ubuntu.json](./matchbox/profiles/debian.json)
   - [groups/ubuntu.json](./matchbox/groups/debian.json)
+
+### Tailsacale
+
+```bash
+curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
+
+sudo apt-get update
+sudo apt-get install tailscale
+# TAILSCALE_AUTHKEY=tskey-xxxx (from creds.env)
+sudo tailscale up --authkey ${TAILSCALE_AUTHKEY}
+```

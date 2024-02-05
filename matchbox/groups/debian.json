@@ -1,5 +1,5 @@
 {
-  "name": "default-group",
+  "name": "debian-group",
   "profile": "debian",
   "metadata": {
     "matchbox_server_ip": "192.168.100.1"
