@@ -321,4 +321,19 @@ sudo apt-get update
 sudo apt-get install tailscale
 # TAILSCALE_AUTHKEY=tskey-xxxx (from creds.env)
 sudo tailscale up --authkey ${TAILSCALE_AUTHKEY}
+tailscale ip -4
+```
+
+### Nats
+
+Get the latest version from <https://github.com/nats-io/nats-server/releases>
+
+```bash
+# nats cli
+wget https://github.com/nats-io/natscli/releases/download/v0.1.1/nats-0.1.1-amd64.deb
+sudo dpkg -i nats-0.1.1-amd64.deb
+
+# nats server - not for now
+wget https://github.com/nats-io/nats-server/releases/download/v2.10.10/nats-server-v2.10.10-amd64.deb
+sudo dpkg -i nats-server-v2.10.10-amd64.deb
 ```
