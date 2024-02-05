@@ -2,8 +2,8 @@
   "id": "debian",
   "name": "Debian Automated Install",
   "boot": {
-    "kernel": "/assets/debian/bullseye-linux",
-    "initrd": ["/assets/debian/bullseye-initrd.gz"],
+    "kernel": "/assets/debian/bookworm-linux",
+    "initrd": ["/assets/debian/bookworm-initrd.gz"],
     "args": [
       "auto=true",
       "priority=critical",
