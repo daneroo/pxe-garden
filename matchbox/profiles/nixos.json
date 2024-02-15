@@ -1,0 +1,13 @@
+{
+  "id": "nixos",
+  "name": "NixOS",
+  "boot": {
+    "kernel": "/assets/nixos/bzImage",
+    "initrd": ["/assets/nixos/initrd"],
+    "args": [
+      "init=/nix/store/076xck86mlij88y91n83mp3faapvycg1-nixos-system-nixos-23.11beta-420383.gfedcba/init",
+      "nohibernate",
+      "loglevel=4"
+    ]
+  }
+}

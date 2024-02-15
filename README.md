@@ -21,12 +21,15 @@ rsync -avi --progress daniel@192.168.2.33:Code/iMetrical/pxe-garden/matchbox/ /v
 
 ## TODO
 
+- [ ] `matchbox/assets/nixos/get-assets.sh` extract `bzImage` and `initrd` from the nixos iso
 - [ ] pvesh script to provision (with meta tags for profile)
 - [ ] Convert pxe-router to docker/podman
 - [ ] Do Ubuntu Server with AutoInstall
 - [ ] tailscale on FCOS - not automated yet, because it requires a manual step
   - [ ] remove PasswordAuthentication=yes (and passwordhash) once tailscale working
-- [ ] NixOS with NixOps
+- [ ] NixOS
+  - See <https://nix-community.github.io/nixos-anywhere/>
+  - See <https://github.com/DeterminateSystems/nix-netboot-serve>
 
 ## Testbed in Proxmox (eventually VLAN)
 
@@ -332,8 +335,50 @@ Get the latest version from <https://github.com/nats-io/nats-server/releases>
 # nats cli
 wget https://github.com/nats-io/natscli/releases/download/v0.1.1/nats-0.1.1-amd64.deb
 sudo dpkg -i nats-0.1.1-amd64.deb
+nats -s nats.ts.imetrical.com sub -r im.\>
 
 # nats server - not for now
 wget https://github.com/nats-io/nats-server/releases/download/v2.10.10/nats-server-v2.10.10-amd64.deb
 sudo dpkg -i nats-server-v2.10.10-amd64.deb
 ```
+
+## NixOS
+
+Looks like we have a few options:
+
+- Get to a nix.
+  - debian + Use the Determinate Nix Installer
+  - nixos from iso (minimal)
+
+### Dissecting NixIS minimal installer iso
+
+```txt
+/mnt/nixos-iso/boot/grub/loopback.cfg -> /mnt/nixos-iso/EFI/boot/grub.cfg
+menuentry 'NixOS 23.11.4080.fb0c047e30b6 Installer '  --class installer {
+  # Fallback to UEFI console for boot, efifb sometimes has difficulties.
+  terminal_output console
+
+  linux /boot/bzImage ${isoboot} init=/nix/store/1gf9vz1a5hzfvkj59raxcw7f7rp8p5gd-nixos-system-nixos-23.11.4080.fb0c047e30b6/init  root=LABEL=nixos-minimal-23.11-x86_64 boot.shell
+_on_fail nohibernate loglevel=4
+  initrd /boot/initrd
+}
+```
+
+Build the nixos installer:
+
+```bash
+$ nix-build -A netboot.x86_64-linux '<nixpkgs/nixos/release.nix>'
+$ ls result/
+bzImage  initrd  initrd.zst  lib  netboot.ipxe  nix-support  System.map
+```
+
+### References
+
+- Install-anywhere (over ssh) See <https://nix-community.github.io/nixos-anywhere/>
+- Netboot Installer: <https://nixos.org/manual/nixos/stable/index.html#sec-booting-from-pxe>
+- The Determinate Nix Installer
+  - GitHub: <https://github.com/DeterminateSystems/nix-installer>
+  - Blog Intro <https://determinate.systems/posts/determinate-nix-installer>
+- Netboot Serve <https://github.com/DeterminateSystems/nix-netboot-serve>
+- Zero to Nix: <https://zero-to-nix.com/>
+- [NixOS deployment tool](https://github.com/DBCDK/morph)

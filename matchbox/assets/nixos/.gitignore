@@ -1,0 +1,5 @@
+# Until we write get-assets.sh, we'll just put the files here
+# but .gitignore them
+bzImage
+initrd
+netboot.ipxe

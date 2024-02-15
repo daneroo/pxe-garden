@@ -1,6 +1,9 @@
 {
   "name": "debian-group",
   "profile": "debian",
+  "selector": {
+    "mac": "impossible"
+  },
   "metadata": {
     "matchbox_server_ip": "192.168.100.1"
   }

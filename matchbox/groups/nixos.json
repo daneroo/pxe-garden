@@ -1,0 +1,7 @@
+{
+  "name": "nixos-group",
+  "profile": "nixos",
+  "metadata": {
+    "matchbox_server_ip": "192.168.100.1"
+  }
+}
